@@ -1,0 +1,754 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Call Flow Visualizer — ProfitsPlusX</title>
+
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <style>
+    /*
+      Call Flow Visualizer - styles
+      - modern clean card look
+      - centered header and input panel
+      - responsive
+    */
+    :root{
+      --bg: #f4f7fb;
+      --card: #ffffff;
+      --muted: #6b7280;
+      --accent-1: #0ea5ff;
+      --accent-2: #0066ff;
+      --primary: #0b63ff;
+      --shadow-1: 0 8px 28px rgba(6, 16, 70, 0.08);
+      --glass: rgba(255,255,255,0.6);
+    }
+    html,body{height:100%;margin:0;font-family:Poppins,Inter,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;color:#0f172a;background:var(--bg);}
+    .wrap {max-width:1180px;margin:28px auto;padding:18px;}
+
+    /* Header */
+    .header {
+      text-align:center;margin-bottom:14px;
+    }
+    .logoTitle { font-size:30px;font-weight:700;color:var(--primary); text-shadow: 0 1px 0 rgba(255,255,255,0.6); }
+    .subtitle { color:var(--muted); margin-top:8px; font-size:14px; max-width:820px;margin-left:auto;margin-right:auto; }
+
+    /* Input card */
+    .inputCard {
+      background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,255,255,0.95));
+      box-shadow: var(--shadow-1);
+      border-radius:14px;
+      padding:18px;
+      margin-top:18px;
+      display:flex;flex-direction:column;gap:12px;align-items:center;
+    }
+    .rowTop { width:100%; display:flex; gap:16px; align-items:flex-start; justify-content:center; flex-wrap:wrap; }
+    textarea#dataInput {
+      width: 780px; max-width:100%;
+      min-height:170px;
+      border-radius:10px;
+      border:1px solid rgba(10,30,80,0.06);
+      padding:12px;font-family:monospace;font-size:13px; resize:vertical;
+      box-shadow: 0 6px 20px rgba(8,26,80,0.04);
+      background: linear-gradient(180deg,#fbfdff,#ffffff);
+    }
+
+    /* Controls under textarea */
+    .controlsRow {
+      width:100%;
+      display:flex;
+      gap:10px;
+      justify-content:center;
+      align-items:center;
+      margin-top:6px;
+      flex-wrap:wrap;
+    }
+    .btn {
+      background:linear-gradient(90deg,var(--accent-1),var(--accent-2));
+      color:white;padding:10px 14px;border-radius:10px;border:none;font-weight:700;cursor:pointer;
+      box-shadow: 0 8px 20px rgba(6,60,180,0.12);
+      display:inline-flex;align-items:center;gap:8px;
+    }
+    .btn.secondary {
+      background:transparent;color:var(--primary);border:1px solid rgba(10,40,160,0.06);
+      box-shadow:none;font-weight:600;
+    }
+    .smallText { font-size:13px;color:var(--muted); }
+
+    /* file input styled like button */
+    .fileLabel {
+      display:inline-block;padding:10px 14px;border-radius:10px;background:linear-gradient(90deg,#eaf6ff,#ffffff);border:1px solid rgba(6,60,180,0.06);cursor:pointer;color:var(--primary);font-weight:700;
+      box-shadow: 0 6px 18px rgba(6,60,180,0.04);
+    }
+    input[type=file]{ display:none; }
+
+    /* canvas area */
+    .canvasWrap { margin-top:22px;background:transparent;border-radius:12px;padding:20px;min-height:420px;position:relative;overflow:auto;border:1px dashed rgba(10,80,255,0.04);}
+    .flowContainer {position:relative;padding:30px;display:flex;flex-direction:column;gap:36px;align-items:center}
+
+    /* AA Card */
+    .aaCard { width:860px; background:var(--card); border-radius:12px;padding:18px 18px 22px;box-shadow:var(--shadow-1);position:relative;border:1px solid rgba(10,20,40,0.04); }
+    .aaHeader {display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:14px}
+    .aaTitle {display:flex;gap:12px;align-items:center}
+    .aaIcon { width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,var(--accent-1),var(--accent-2));display:flex;align-items:center;justify-content:center;color:white;font-size:18px;font-weight:700;box-shadow:0 10px 20px rgba(6,40,110,0.12)}
+    .aaMeta {font-size:13px;color:#0f172a}
+    .aaFields {display:flex;gap:10px;align-items:center}
+    .aaExt {background:#f1f6ff;padding:8px 12px;border-radius:10px;font-weight:600;color:var(--primary);border:1px solid rgba(6,60,180,0.06)}
+
+    /* Options list */
+    .optionsWrap {display:flex;flex-direction:column;gap:12px;padding-left:54px}
+    .optionItem { display:flex;align-items:center;gap:12px;padding:12px;border-radius:10px;background:#fff;border:1px solid rgba(12,32,64,0.04);box-shadow:0 6px 14px rgba(10,30,60,0.04);cursor:pointer;transition:transform .12s, box-shadow .12s;}
+    .optionItem:hover { transform: translateY(-4px); box-shadow: 0 18px 30px rgba(10,30,60,0.06) }
+    .optionBullet { width:14px;height:14px;border-radius:50%;border:3px solid #cfe6ff;background:white;display:inline-block;box-shadow:inset 0 -2px 4px rgba(0,0,0,0.04); }
+    .optionContent { flex:1; display:flex; flex-direction:column }
+    .optTitle { font-weight:700; font-size:15px }
+    .optMeta { font-size:13px; color:var(--muted) }
+    .targetBadge { background:#f1f6ff; padding:6px 10px; border-radius:8px; font-size:13px; border:1px solid rgba(6,60,180,0.04); }
+
+    /* timeline */
+    .timeline { position:absolute; left:28px; top:58px; width:4px; height:calc(100% - 90px); border-radius:4px; background:repeating-linear-gradient(180deg,#e9f2ff 0 8px, transparent 8px 16px); opacity:0.95; }
+
+    /* modal */
+    .modal { position:fixed;left:0;top:0;right:0;bottom:0;display:none;align-items:center;justify-content:center;background:rgba(6,10,30,0.45);z-index:9999 }
+    .modalCard { width:560px;background:var(--card);border-radius:12px;padding:18px;box-shadow:0 18px 40px rgba(7,20,60,0.25); }
+    .modalHeader { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px }
+    .closeBtn { background:#f6f8ff;border-radius:8px;padding:6px 10px;border:1px solid rgba(8,30,120,0.06);cursor:pointer }
+
+    /* small responsive tweaks */
+    @media (max-width:980px) {
+      .aaCard { width:92%; }
+      textarea#dataInput { width:92%; }
+      .fileLabel { padding:8px 12px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <!-- Header -->
+    <div class="header">
+      <div class="logoTitle">Call Flow Visualizer</div>
+      <div class="subtitle">Paste CSV/JSON or upload a file, then click <strong>Generate Flow</strong>. Click option items to inspect destinations or jump to other Auto Attendants.</div>
+    </div>
+
+    <!-- Input Card: centered, with file upload button and textarea -->
+    <div class="inputCard" role="region" aria-label="Data input">
+      <div style="width:100%;display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap">
+        <!-- File upload styled as button -->
+        <label for="fileInput" class="fileLabel"><i class="fa fa-upload"></i>&nbsp; Upload CSV / JSON</label>
+        <button class="btn secondary" id="btnLoadExample"><i class="fa fa-database"></i> Load Example Dataset</button>
+        <div class="smallText" id="detectedFormat">Detected: —</div>
+      </div>
+
+      <!-- Textarea for paste (CSV or JSON) -->
+      <textarea id="dataInput" placeholder="Paste CSV or JSON here... (or upload a file)"></textarea>
+
+      <!-- Buttons row under textarea -->
+      <div class="controlsRow">
+        <button class="btn" id="btnGenerate"><i class="fa fa-magic"></i> Generate Flow</button>
+        <button class="btn secondary" id="btnClear"><i class="fa fa-eraser"></i> Clear</button>
+        <button class="btn secondary" id="btnExportJSON"><i class="fa fa-file-export"></i> Export JSON</button>
+        <input type="file" id="fileInput" accept=".csv,.json" />
+      </div>
+    </div>
+
+    <!-- Canvas area -->
+    <div class="canvasWrap" id="canvasWrap" aria-live="polite">
+      <svg class="connectors" id="connectors" style="position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;"></svg>
+      <div class="flowContainer" id="flowContainer"></div>
+    </div>
+
+    <!-- Modal for details -->
+    <div class="modal" id="modal" role="dialog" aria-modal="true" aria-hidden="true">
+      <div class="modalCard" id="modalCard">
+        <div class="modalHeader">
+          <h3 id="modalTitle">Details</h3>
+          <div><button class="closeBtn" id="closeModal"><i class="fa fa-times"></i></button></div>
+        </div>
+        <div id="modalBody" style="font-size:14px;color:#102a43"></div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div style="text-align:center;margin-top:18px;color:var(--muted);font-size:13px;">
+      © 2025 ProfitsPlusX.com All rights reserved.
+    </div>
+  </div>
+
+<script>
+/*
+  Call Flow Visualizer - JavaScript
+  - parse CSV/JSON
+  - build internal model
+  - render Auto Attendant cards with options
+  - draw SVG connectors
+  - click handlers to show details or scroll to other AAs
+  - many inline comments for clarity
+*/
+
+/* ---------------------------
+  Utility: robust CSV parser
+  - handles quoted fields and newlines inside quotes
+  - returns array of objects (header-driven)
+--------------------------- */
+function parseCSVToObjects(csvText) {
+  // Normalize newlines
+  const text = csvText.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  // Split into lines while preserving quoted newlines
+  const rows = [];
+  let cur = '', inQuotes = false;
+  for (let i=0;i<text.length;i++) {
+    const ch = text[i];
+    cur += ch;
+    if (ch === '"') {
+      // check for escaped double quotes
+      if (text[i+1] === '"') { cur += text[i+1]; i++; continue; }
+      inQuotes = !inQuotes;
+    }
+    if (ch === '\n' && !inQuotes) { rows.push(cur.trim()); cur = ''; }
+  }
+  if (cur.trim()) rows.push(cur.trim());
+  if (rows.length === 0) return [];
+
+  // parse a CSV row into cells (handles quoted cells)
+  function parseRow(row) {
+    const cells = [];
+    let cell = '', q = false;
+    for (let i=0;i<row.length;i++) {
+      const c = row[i];
+      if (c === '"') {
+        if (q && row[i+1] === '"') { cell += '"'; i++; continue; }
+        q = !q; continue;
+      }
+      if (c === ',' && !q) { cells.push(cell); cell = ''; continue; }
+      cell += c;
+    }
+    cells.push(cell);
+    return cells.map(s => s.trim());
+  }
+
+  const header = parseRow(rows[0]);
+  const out = [];
+  for (let r=1;r<rows.length;r++) {
+    if (!rows[r].trim()) continue;
+    const vals = parseRow(rows[r]);
+    const obj = {};
+    for (let i=0;i<header.length;i++) {
+      obj[header[i].trim()] = vals[i] !== undefined ? vals[i] : '';
+    }
+    out.push(obj);
+  }
+  return out;
+}
+
+/* ---------------------------
+  Detect input format (JSON or CSV)
+--------------------------- */
+function detectFormat(inputText) {
+  const t = inputText.trim();
+  if (!t) return 'empty';
+  // try JSON parse first
+  try {
+    JSON.parse(t); return 'json';
+  } catch(e) {}
+  // naive CSV detection
+  if (t.includes(',') && t.includes('\n')) return 'csv';
+  return 'unknown';
+}
+
+/* ---------------------------
+  Build internal model from parsed rows or JSON entities
+  - returns:
+     entities: map by id
+     lookupById: map by id
+     aas: array of Auto Attendant entities (ordered)
+--------------------------- */
+function buildModel(parsed) {
+  // If parsed is an object with .entities or it's array of items (JSON input)
+  if (!Array.isArray(parsed)) {
+    // if object with 'entities'
+    if (parsed.entities && Array.isArray(parsed.entities)) parsed = parsed.entities;
+    else if (parsed.entities && typeof parsed.entities === 'object') parsed = Object.values(parsed.entities);
+    else parsed = [parsed];
+  }
+
+  // Normalize keys to lowercase for convenience
+  const rows = parsed.map(r => {
+    const lower = {};
+    for (const k in r) lower[k.toLowerCase()] = r[k];
+    return lower;
+  });
+
+  // Group rows by entity_id
+  const byEntityId = {};
+  rows.forEach(r => {
+    const id = (r['entity_id'] || r['id'] || r['user_id'] || r['member_id'] || '').toString().trim();
+    // If the row seems to represent an entity with an 'entity' field but no id, synth one
+    const entityName = r['entity_name'] || r['name'] || '';
+    const fallbackId = entityName ? entityName.replace(/\s+/g,'_') : '';
+    const key = id || fallbackId || ('ent_' + Math.random().toString(36).slice(2,8));
+    if (!byEntityId[key]) byEntityId[key] = [];
+    byEntityId[key].push(r);
+  });
+
+  // Helper create entity structure
+  const entities = {};
+  for (const id in byEntityId) {
+    const group = byEntityId[id];
+    const baseRow = group[0];
+    const entity = {
+      id: id,
+      entity_type: (baseRow['entity_type'] || baseRow['entity'] || '').toString().toLowerCase(),
+      name: baseRow['entity_name'] || baseRow['name'] || baseRow['user_name'] || baseRow['first_name'] + (baseRow['last_name'] ? (' ' + baseRow['last_name']) : '') || id,
+      location: baseRow['entity_location'] || baseRow['location'] || '',
+      phone_number: baseRow['entity_phone_number'] || baseRow['phone_number'] || '',
+      extension: baseRow['entity_extension'] || baseRow['extension'] || baseRow['user_extension'] || '',
+      description: baseRow['entity_description'] || baseRow['description'] || '',
+      options: [],
+      users: []
+    };
+
+    // extract options and users/members from each row
+    group.forEach(r => {
+      // option detection: option_num or option_description or option_action present
+      if ((r['option_num'] !== undefined && r['option_num'] !== '') || r['option_description'] || r['option_action'] || r['option_target'] || r['option']) {
+        const opt = {
+          option_num: r['option_num'] || r['option'] || '',
+          option_description: r['option_description'] || r['option_desc'] || r['option'] || '',
+          option_action: r['option_action'] || '',
+          option_target: (r['option_target'] || r['option_action_target'] || r['option_to'] || '').toString().trim(),
+          option_audio_file: r['option_audio_file'] || r['option_audio'] || ''
+        };
+        entity.options.push(opt);
+      }
+      // user/member detection
+      if (r['user_id'] || r['user_first_name'] || r['member_id'] || (entity.entity_type && entity.entity_type.includes('user'))) {
+        const u = {
+          id: r['user_id'] || r['member_id'] || r['entity_id'] || '',
+          first_name: r['user_first_name'] || r['first_name'] || '',
+          last_name: r['user_last_name'] || r['last_name'] || '',
+          name: (r['user_first_name'] || r['first_name'] || '') + (r['user_last_name'] || r['last_name'] ? (' ' + (r['user_last_name'] || r['last_name'])) : ''),
+          phone_number: r['user_phone_number'] || r['user_phone'] || '',
+          extension: r['user_extension'] || r['extension'] || '',
+          email: r['user_email'] || ''
+        };
+        // If id is empty try to use entity id
+        if (!u.id) u.id = id;
+        entity.users.push(u);
+      }
+
+      // Support JSON-style 'members' or 'members' in parsed JSON
+      if (r['members'] && Array.isArray(r['members'])) {
+        r['members'].forEach(m => {
+          const mu = {
+            id: m['user_id'] || m['id'] || '',
+            name: m['user_name'] || (m['first_name'] ? (m['first_name'] + (m['last_name']?(' ' + m['last_name']):'')) : ''),
+            extension: m['user_extension'] || m['extension'] || '',
+            phone_number: m['phone_number'] || ''
+          };
+          entity.users.push(mu);
+        });
+      }
+
+      // If original row itself is a JSON entity (aa, call_group etc) and contains options/users directly
+      if (r['options'] && Array.isArray(r['options'])) {
+        r['options'].forEach(o=>{
+          entity.options.push({
+            option_num: o.option_num || o.key || '',
+            option_description: o.option_description || o.description || o.label || '',
+            option_action: o.option_action || o.action || '',
+            option_target: o.option_target || o.target_id || o.target || '',
+            option_audio_file: o.option_audio_file || ''
+          });
+        });
+      }
+      if (r['members'] && Array.isArray(r['members'])) {
+        r['members'].forEach(m=>{
+          entity.users.push({ id: m.user_id || m.id || '', name: m.user_name || (m.first_name?m.first_name+' '+(m.last_name||''):'') , extension: m.user_extension || m.extension || '', phone_number: m.phone_number || ''});
+        });
+      }
+    });
+
+    entities[id] = entity;
+  }
+
+  // Create lookup map
+  const lookupById = {};
+  for (const k in entities) lookupById[entities[k].id] = entities[k];
+
+  // Determine Auto Attendants to display first (entities that have options or entity_type including 'auto')
+  const aas = Object.values(entities).filter(e => (e.entity_type && e.entity_type.includes('auto')) || (e.options && e.options.length>0));
+  // If no AAs found we still show all entities
+  const aasFinal = aas.length ? aas : Object.values(entities);
+
+  return { entities, lookupById, aas: aasFinal };
+}
+
+/* ---------------------------
+  Render the flow into DOM
+  - create AA cards and option items
+  - attach click handlers for options
+  - draw SVG connectors
+--------------------------- */
+function clearFlow() {
+  const container = document.getElementById('flowContainer');
+  container.innerHTML = '';
+  const svg = document.getElementById('connectors');
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+}
+
+function renderFlow(model) {
+  clearFlow();
+  const container = document.getElementById('flowContainer');
+  const svg = document.getElementById('connectors');
+
+  // simple message if no data
+  if (!model || !model.aas || model.aas.length === 0) {
+    const msg = document.createElement('div');
+    msg.style.padding='18px'; msg.style.color='var(--muted)';
+    msg.textContent = 'No Auto Attendants or entities found. Paste CSV or JSON and click Generate.';
+    container.appendChild(msg);
+    return;
+  }
+
+  // For each AA entity, create card
+  model.aas.forEach(aa => {
+    const card = document.createElement('div');
+    card.className = 'aaCard';
+    card.id = 'aa-' + aa.id;
+
+    // Header block
+    const header = document.createElement('div'); header.className='aaHeader';
+    const left = document.createElement('div'); left.className='aaTitle';
+    const icon = document.createElement('div'); icon.className='aaIcon'; icon.innerHTML = '<i class="fa fa-phone"></i>';
+    const tit = document.createElement('div');
+    tit.innerHTML = `<div style="font-weight:700;font-size:16px">${escapeHtml(aa.name || aa.id)}</div><div class="aaMeta" style="margin-top:6px">${escapeHtml(aa.description || '')}</div>`;
+    left.appendChild(icon); left.appendChild(tit);
+    header.appendChild(left);
+
+    // Right metadata (location, phone/ext)
+    const right = document.createElement('div'); right.className='aaFields';
+    const loc = document.createElement('div'); loc.className='smallText'; loc.textContent = aa.location || '';
+    const ext = document.createElement('div'); ext.className='aaExt'; ext.textContent = aa.phone_number ? aa.phone_number : (aa.extension ? ('ext ' + aa.extension) : '');
+    right.appendChild(loc); right.appendChild(ext);
+    header.appendChild(right);
+    card.appendChild(header);
+
+    // timeline left
+    const timeline = document.createElement('div'); timeline.className = 'timeline';
+    card.appendChild(timeline);
+
+    // options list
+    const optionsWrap = document.createElement('div'); optionsWrap.className = 'optionsWrap';
+    if (!aa.options || aa.options.length === 0) {
+      const empty = document.createElement('div'); empty.style.padding='10px 12px'; empty.style.color='var(--muted)'; empty.textContent = 'No options defined.';
+      optionsWrap.appendChild(empty);
+    } else {
+      aa.options.forEach((opt, oi) => {
+        const item = document.createElement('div'); item.className = 'optionItem';
+        // bullet
+        const bullet = document.createElement('div'); bullet.className='optionBullet'; item.appendChild(bullet);
+        // content
+        const content = document.createElement('div'); content.className = 'optionContent';
+        const title = document.createElement('div'); title.className='optTitle'; title.textContent = (opt.option_num ? ('Press ' + opt.option_num + ': ') : '') + (opt.option_description || '(no label)');
+        const meta = document.createElement('div'); meta.className='optMeta'; meta.textContent = 'Action: ' + (opt.option_action || 'transfer');
+        content.appendChild(title); content.appendChild(meta);
+        item.appendChild(content);
+
+        // target badge (resolve quickly)
+        const targetDiv = document.createElement('div'); targetDiv.style.display='flex'; targetDiv.style.alignItems='center';
+        const badge = document.createElement('div'); badge.className='targetBadge';
+        const targetId = opt.option_target || '';
+        const resolved = resolveTarget(targetId, model.lookupById);
+        if (resolved.found) {
+          badge.innerHTML = `<div style="font-weight:700">${escapeHtml(resolved.entityType)}</div><div style="font-size:13px;color:${resolved.external ? '#64748b':'#0f172a'}">${escapeHtml(resolved.label)}</div>`;
+        } else if (opt.option_action && opt.option_action.toLowerCase().includes('play')) {
+          badge.innerHTML = `<div style="font-weight:700">Play Audio</div><div style="font-size:13px;color:var(--muted)">${escapeHtml(opt.option_audio_file || '(audio file)')}</div>`;
+        } else if (targetId && targetId.trim() !== '') {
+          badge.innerHTML = `<div style="font-weight:700">External</div><div style="font-size:13px;color:var(--muted)">${escapeHtml(targetId)}</div>`;
+        } else {
+          badge.innerHTML = `<div style="font-weight:700">No Target</div>`;
+        }
+        targetDiv.appendChild(badge);
+        item.appendChild(targetDiv);
+
+        // store metadata
+        item.dataset.parentId = aa.id;
+        item.dataset.optionTarget = targetId || '';
+        item.dataset.optionAction = opt.option_action || '';
+        item.dataset.optionAudio = opt.option_audio_file || '';
+        item.dataset.optionIndex = oi;
+
+        // click handler
+        item.addEventListener('click', (ev)=> {
+          ev.stopPropagation();
+          handleOptionClick(item, model);
+        });
+
+        optionsWrap.appendChild(item);
+      });
+    }
+    card.appendChild(optionsWrap);
+    container.appendChild(card);
+  });
+
+  // after putting AA cards in DOM, draw SVG connectors
+  requestAnimationFrame(() => drawAllConnectors(model));
+}
+
+/* ---------------------------
+  Resolve target to entity if known
+  - returns object {found: bool, entity: obj (if found), entityType: string, label: string, external: bool}
+--------------------------- */
+function resolveTarget(tgt, lookup) {
+  if (!tgt) return {found:false, label:''};
+  const s = tgt.toString().trim();
+  if (lookup[s]) {
+    const e = lookup[s];
+    // decide entityType label
+    let typeName = e.entity_type || '';
+    if (typeName.includes('auto')) typeName = 'Auto Attendant';
+    else if (typeName.includes('call group') || typeName.includes('call_group') || (e.users && e.users.length && (e.options.length===0))) typeName = 'Call Group';
+    else if (typeName.includes('call center') || typeName.includes('call_center') || (e.users && e.users.length && (e.options.length===0))) typeName = 'Call Center';
+    else if (typeName.includes('user') || (e.users && e.users.length && !e.options.length)) typeName = 'User/Member';
+    else if (!typeName && e.options && e.options.length) typeName = 'Call Flow';
+    else typeName = (typeName || 'Entity');
+    const label = e.name || e.id;
+    return {found:true, entity:e, entityType:typeName, label: label, external:false};
+  }
+  // crude external detection: looks like phone number or digits
+  if (/^[\d\+\-\(\) ]+$/.test(s)) return {found:false, label:s, external:true};
+  // else unknown string
+  return {found:false, label:s, external:false};
+}
+
+/* ---------------------------
+  Handle option click behavior
+  - if target is AA -> scroll to it and show modal summary
+  - if target is group/center -> show members
+  - if target is user -> show user details
+  - if external or play audio -> show relevant info
+--------------------------- */
+function handleOptionClick(item, model) {
+  const tgt = item.dataset.optionTarget;
+  const action = (item.dataset.optionAction || '').toLowerCase();
+  const lookup = model.lookupById;
+  const modal = document.getElementById('modal');
+  const modalTitle = document.getElementById('modalTitle');
+  const modalBody = document.getElementById('modalBody');
+
+  const resolved = resolveTarget(tgt, lookup);
+
+  if (resolved.found) {
+    const e = resolved.entity;
+    // If it's an Auto Attendant (has options or entity_type includes auto)
+    if ((e.entity_type && e.entity_type.includes('auto')) || (e.options && e.options.length>0)) {
+      modalTitle.textContent = 'Auto Attendant — ' + (e.name || e.id);
+      modalBody.innerHTML = `<div style="color:var(--muted);margin-bottom:8px">${escapeHtml(e.description || '')}</div>
+        <div style="margin-bottom:6px"><strong>Phone:</strong> ${escapeHtml(e.phone_number || '(none)')} &nbsp; <strong>Extension:</strong> ${escapeHtml(e.extension || '(none)')}</div>
+        <div style="margin-top:8px"><strong>Options:</strong></div>
+        <ul style="margin-top:8px">` + (e.options && e.options.length ? e.options.map(o => `<li><strong>${escapeHtml(o.option_num||'')}</strong> — ${escapeHtml(o.option_description||'(no label)')} (${escapeHtml(o.option_action||'transfer')}) → ${escapeHtml(o.option_target||'(none)')}</li>`).join('') : '<li>(no options)</li>') + `</ul>`;
+      modal.style.display = 'flex';
+      // Scroll to the AA card after small delay
+      setTimeout(()=> {
+        const el = document.getElementById('aa-' + e.id);
+        if (el) el.scrollIntoView({behavior:'smooth', block:'center'});
+      }, 200);
+    } else if ((e.entity_type && (e.entity_type.includes('call') || e.entity_type.includes('group') || e.entity_type.includes('center'))) || (e.users && e.users.length>0)) {
+      // call group or call center
+      modalTitle.textContent = (e.name || e.id);
+      modalBody.innerHTML = `<div style="color:var(--muted);margin-bottom:8px">${escapeHtml(e.description||'')}</div>
+        <div><strong>Extension:</strong> ${escapeHtml(e.extension||'(none)')} &nbsp; <strong>Phone:</strong> ${escapeHtml(e.phone_number||'(none)')}</div>
+        <div style="margin-top:10px"><strong>Members/Agents:</strong></div>
+        <ul style="margin-top:8px">` + (e.users && e.users.length ? e.users.map(u => `<li>${escapeHtml(u.name || (u.first_name?u.first_name+' '+(u.last_name||'') : u.id || ''))} — ext ${escapeHtml(u.extension||'(none)')}${u.phone_number?(' — '+escapeHtml(u.phone_number)):''}</li>`).join('') : '<li>(no members)</li>') + `</ul>`;
+      modal.style.display = 'flex';
+    } else {
+      // generic entity/user
+      modalTitle.textContent = (e.name || e.id);
+      modalBody.innerHTML = `<div style="color:var(--muted);margin-bottom:8px">${escapeHtml(e.description||'')}</div>
+        <div><strong>Phone:</strong> ${escapeHtml(e.phone_number||'(none)')} &nbsp; <strong>Extension:</strong> ${escapeHtml(e.extension||'(none)')}</div>`;
+      modal.style.display = 'flex';
+    }
+  } else {
+    // external number or play audio
+    if (action && action.includes('play')) {
+      modalTitle.textContent = 'Play Audio';
+      modalBody.innerHTML = `<div>Audio file: <strong>${escapeHtml(item.dataset.optionAudio || '(audio file)')}</strong></div>`;
+    } else {
+      modalTitle.textContent = 'External Target';
+      modalBody.innerHTML = `<div>External target: <strong>${escapeHtml(tgt || '(none)')}</strong></div>`;
+    }
+    modal.style.display = 'flex';
+  }
+}
+
+/* ---------------------------
+  Draw connectors between left timeline and option bullets
+  - uses cubic bezier paths to make smooth curves
+  - calculates positions relative to canvasWrap
+--------------------------- */
+function drawAllConnectors(model) {
+  const svg = document.getElementById('connectors');
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+  const wrapRect = document.getElementById('canvasWrap').getBoundingClientRect();
+  const cards = Array.from(document.querySelectorAll('.aaCard'));
+
+  cards.forEach(card => {
+    const cardRect = card.getBoundingClientRect();
+    const startX = cardRect.left + 28 - wrapRect.left;
+    const startYTop = cardRect.top + 58 - wrapRect.top + 6;
+
+    const options = Array.from(card.querySelectorAll('.optionItem'));
+    options.forEach((opt, i) => {
+      const bullet = opt.querySelector('.optionBullet');
+      if (!bullet) return;
+      const bRect = bullet.getBoundingClientRect();
+      const endX = bRect.left + bRect.width/2 - wrapRect.left;
+      const endY = bRect.top + bRect.height/2 - wrapRect.top;
+
+      // control points
+      const dx = Math.max(40, Math.abs(endX - startX) / 2);
+      const cx1 = startX + dx;
+      const cx2 = endX - dx;
+      const d = `M ${startX} ${startYTop + (i*48)} C ${cx1} ${startYTop + (i*48)} ${cx2} ${endY} ${endX} ${endY}`;
+
+      const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+      path.setAttribute('d', d);
+      path.setAttribute('stroke','rgba(6,60,180,0.14)');
+      path.setAttribute('fill','none');
+      path.setAttribute('stroke-width','3');
+      svg.appendChild(path);
+    });
+  });
+}
+
+/* ---------------------------
+  Helpers: escaping and debounce
+--------------------------- */
+function escapeHtml(s) {
+  if (!s && s !== 0) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+function debounce(fn, delay) { let t; return (...a)=>{ clearTimeout(t); t = setTimeout(()=>fn(...a), delay); }; }
+
+/* ---------------------------
+  Main: wiring UI controls
+--------------------------- */
+const fileInput = document.getElementById('fileInput');
+fileInput.addEventListener('change', (ev) => {
+  const f = ev.target.files[0];
+  if (!f) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    document.getElementById('dataInput').value = e.target.result;
+    document.getElementById('detectedFormat').textContent = 'Detected: loaded from file';
+  };
+  reader.readAsText(f);
+});
+
+// Generate button: parse input, build model, render
+let currentModel = null;
+document.getElementById('btnGenerate').addEventListener('click', ()=> {
+  const raw = document.getElementById('dataInput').value;
+  if (!raw || !raw.trim()) { alert('Please paste CSV or JSON data (or upload file).'); return; }
+  const fmt = detectFormat(raw);
+  document.getElementById('detectedFormat').textContent = 'Detected: ' + fmt.toUpperCase();
+  let parsed;
+  try {
+    if (fmt === 'json') {
+      const parsedJSON = JSON.parse(raw);
+      // If top-level object has entities array, use it
+      if (parsedJSON.entities && Array.isArray(parsedJSON.entities)) parsed = parsedJSON.entities;
+      else if (Array.isArray(parsedJSON)) parsed = parsedJSON;
+      else parsed = [parsedJSON];
+    } else if (fmt === 'csv') {
+      parsed = parseCSVToObjects(raw);
+    } else {
+      // try JSON parse as fallback
+      try { parsed = JSON.parse(raw); if (!Array.isArray(parsed) && parsed.entities) parsed = parsed.entities; } catch(e) { alert('Unable to detect format. Please provide JSON or CSV.'); return; }
+    }
+  } catch (err) {
+    alert('Parsing error: ' + err.message);
+    return;
+  }
+
+  // Build model & render
+  currentModel = buildModel(parsed);
+  renderFlow(currentModel);
+});
+
+// Clear button
+document.getElementById('btnClear').addEventListener('click', ()=> {
+  document.getElementById('dataInput').value = '';
+  document.getElementById('detectedFormat').textContent = 'Detected: —';
+  clearFlow();
+});
+
+// Load Example dataset button
+document.getElementById('btnLoadExample').addEventListener('click', ()=> {
+  document.getElementById('dataInput').value = `entity_type,entity_id,entity_name,entity_location,entity_phone_number,entity_extension,entity_description,option_num,option_description,option_action,option_target,option_audio_file,user_id,user_first_name,user_last_name,user_phone_number,user_extension,user_email,user_role,user_description
+auto_attendant,AA100,Main AA,HQ,8185551000,3000,Main Menu,1,Sales Department,transfer,CG100,,
+auto_attendant,AA100,Main AA,HQ,8185551000,3000,Main Menu,2,Support Queue,transfer,CC100,,
+auto_attendant,AA100,Main AA,HQ,8185551000,3000,Main Menu,3,Receptionist,transfer,U900,,
+auto_attendant,AA100,Main AA,HQ,8185551000,3000,Main Menu,4,More Options,transfer,AA200,,
+auto_attendant,AA200,More Options AA,HQ,8185551001,3100,Secondary Menu,1,Billing Department,transfer,U800,,
+auto_attendant,AA200,More Options AA,HQ,8185551001,3100,Secondary Menu,2,After Hours Message,play_audio,,after_hours.mp3
+auto_attendant,AA200,More Options AA,HQ,8185551001,3100,Secondary Menu,3,Operator,transfer,U901,,
+call_group,CG100,Sales Group,HQ,,4000,Sales Calls,,,,,U100,Alice,Smith,8185551100,4100,alice@hq.com,agent,Sales Rep
+call_group,CG100,Sales Group,HQ,,4000,Sales Calls,,,,,U101,Bob,Jones,8185551101,4101,bob@hq.com,agent,Sales Rep
+call_center,CC100,Support Center,Remote,,5000,Support Queue,,,,,U200,Carol,White,8185551200,5100,carol@remote.com,agent,Support Agent
+call_center,CC100,Support Center,Remote,,5000,Support Queue,,,,,U201,Dave,Brown,8185551201,5101,dave@remote.com,agent,Support Agent
+user,U800,Billing Specialist,HQ,8185551300,6000,Billing Dept,,,,,,,Eve,Green,8185551300,6000,eve@hq.com,billing,Billing Contact
+user,U900,Receptionist,HQ,8185551400,7000,Front Desk,,,,,,,Frank,Lee,8185551400,7000,frank@hq.com,reception,Main Reception
+user,U901,Operator,HQ,8185551500,7100,General Operator,,,,,,,Grace,King,8185551500,7100,grace@hq.com,operator,Backup Operator
+`;
+  document.getElementById('detectedFormat').textContent = 'Detected: CSV (example loaded)';
+});
+
+// Export JSON button: exports internal model (entities) as JSON file
+document.getElementById('btnExportJSON').addEventListener('click', ()=> {
+  if (!currentModel) { alert('No model to export. Generate the flow first.'); return; }
+  const data = { entities: Object.values(currentModel.entities) };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'callflow_export.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+});
+
+/* ---------------------------
+  Modal controls
+--------------------------- */
+document.getElementById('closeModal').addEventListener('click', ()=> {
+  document.getElementById('modal').style.display = 'none';
+});
+document.getElementById('modal').addEventListener('click', (ev) => {
+  if (ev.target === document.getElementById('modal')) document.getElementById('modal').style.display = 'none';
+});
+
+/* ---------------------------
+  Redraw connectors on window resize (debounced)
+--------------------------- */
+window.addEventListener('resize', debounce(() => {
+  try { if (currentModel) drawAllConnectors(currentModel); } catch(e) {}
+}, 160));
+
+/* ---------------------------
+  Initial auto-load example so user sees output immediately
+--------------------------- */
+document.getElementById('btnLoadExample').click();
+document.getElementById('btnGenerate').click();
+
+</script>
+</body>
+</html>
